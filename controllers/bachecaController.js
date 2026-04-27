@@ -1,8 +1,14 @@
-
+const connection = require ('../dataPost/db');
 const posts = require('../dataPost/post');
-// Funzione per gestire la visualizzazione di tutti i post
+// Funzione per gestire la visualizzazione di tutti i post index
 function index (req, res) {
-    res.json(posts);
+    const sql = 'SELECT * FROM posts';
+    connection.query(sql, (err, results) => {
+        if (err) {
+            return res.status(500).json({ error: 'Database query error' });
+        }
+        res.json(results);
+    });
 }
 
 // Funzione per gestire la visualizzazione di un singolo post
