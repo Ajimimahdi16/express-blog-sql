@@ -1,5 +1,7 @@
 const connection = require ('../dataPost/db');
 const posts = require('../dataPost/post');
+
+
 // Funzione per gestire la visualizzazione di tutti i post index
 function index (req, res) {
     const sql = 'SELECT * FROM posts';
@@ -13,11 +15,18 @@ function index (req, res) {
 
 // Funzione per gestire la visualizzazione di un singolo post
 function show (req, res) {
-    const id = req.params.id;
-    const post = posts.find(p => p.id === parseInt(id));
-    if (!post) 
-    return res.status(404).send('Post not found');
-    res.json(post);
+   const id = req.params.id;
+
+   const sql = 'SELECT * FROM posts WHERE id = ?';
+   connection.query(sql, [id], (err, results) => {
+    if (err) {
+        return res.status(500).json({ error: 'Database query error' });
+    }
+    if (results.length === 0) {
+        return res.status(404).json({ error: 'Post not found' });
+    }
+    res.json(results[0]);
+   });
 }
 
 // Funzione per gestire la creazione di un nuovo post
@@ -64,27 +73,15 @@ function modify (req, res) {
 
 // Funzione per gestire la cancellazione di un post esistente
 function destroy (req, res) {
-    const id = parseInt(req.params.id);
-    const post = posts.find(p => p.id === id);
-    
-    if (!post){
-        res.status(404);
-       
-        return res.json({
-        status: 404,
-        error: 'Post not found',
-        message: 'Post not found'
-    });
-    } 
-    // Rimuovi il post dall'array
-    const index = posts.indexOf(post);
-    posts.splice(index, 1);
-    // Restituisci una risposta di successo
-    res.json({
-        status: 200,
-        message: 'Post deleted successfully'
-    });
-}
+
+    const {id} = req.params;
+
+    connection.query('DELETE FROM posts WHERE id = ?',[id], (err) => {
+    if (err) return res.status(500).json({ error: 'Failed to delete post' });
+            res.sendStatus(204);
+        });
+    }
+
 
 module.exports = {
     index,
