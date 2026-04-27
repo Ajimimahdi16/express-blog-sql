@@ -12,22 +12,39 @@ function index (req, res) {
         res.json(results);
     });
 }
+// Funzione per gestire la visualizzazione di un singolo post show
+function show(req, res) {
+    const id = req.params.id;
 
-// Funzione per gestire la visualizzazione di un singolo post
-function show (req, res) {
-   const id = req.params.id;
+    // 1. Query per ottenere il post
+    const postSql = 'SELECT * FROM posts WHERE id = ?';
 
-   const sql = 'SELECT * FROM posts WHERE id = ?';
-   connection.query(sql, [id], (err, results) => {
-    if (err) {
-        return res.status(500).json({ error: 'Database query error' });
-    }
-    if (results.length === 0) {
-        return res.status(404).json({ error: 'Post not found' });
-    }
-    res.json(results[0]);
-   });
+    connection.query(postSql, [id], (err, postResults) => {
+        if (err) return res.status(500).json({ error: 'Database query error' });
+        if (postResults.length === 0) return res.status(404).json({ error: 'Post not found' });
+
+        const post = postResults[0];
+
+        // 2. Query per ottenere i tag associati a questo post
+        // Usiamo una JOIN tra la tabella tags e la tabella pivot post_tag
+        const tagsSql = `
+            SELECT tags.* FROM tags
+            JOIN post_tag ON tags.id = post_tag.tag_id
+            WHERE post_tag.post_id = ?
+        `;
+
+        connection.query(tagsSql, [id], (err, tagsResults) => {
+            if (err) return res.status(500).json({ error: 'Database query error while fetching tags' });
+
+            // Aggiungiamo l'array dei tag all'oggetto post
+            post.tags = tagsResults;
+
+            // Restituiamo il post completo
+            res.json(post);
+        });
+    });
 }
+
 
 // Funzione per gestire la creazione di un nuovo post
 function store (req, res) {
