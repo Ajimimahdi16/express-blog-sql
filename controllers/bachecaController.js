@@ -12,6 +12,9 @@ function index (req, res) {
         res.json(results);
     });
 }
+
+
+
 // Funzione per gestire la visualizzazione di un singolo post show
 function show(req, res) {
     const id = req.params.id;
@@ -46,46 +49,49 @@ function show(req, res) {
 }
 
 
+
+
 // Funzione per gestire la creazione di un nuovo post
 function store (req, res) {
-    const newPost = posts [posts.length -1].id + 1;
-    const post = {
-        id: newPost,
-        titolo: req.body.titolo,
-        contenuto: req.body.contenuto,
-        immagine : req.body.immagine,
-        tags : req.body.tags
-    };
-    posts.push(post);
+  const { title, content, image } = req.body;
 
-    console.log(post);
-    res.status(201);
-    res.json(post);
+  const sql = 'INSERT INTO posts (title, content, image) VALUES (?, ?, ?)';
+
+  connection.query(sql, [title, content, image], (err, result) => {
+    if (err) return res.status(500).json({ error: 'Failed to create post' });
+    console.log(result);
+    res.json({ id: result.insertId});
+  });
 }
+
+
 
 // Funzione per gestire l'aggiornamento di un post esistente
-function update (req, res) {
-    const id = parseInt(req.params.id); // Ottieni l'ID del post da aggiornare
-     const post = posts.find(p => p.id === parseInt(id));
-    if (!post){
-        res.status(404);
-        return res.json({
-        error: 'Post not found',
-        message: 'Post not found'
-    });
+function update(req, res) {
+// recuperiamo l'id dall' URL
+const { id } = req.params;
+// recuperiamo i dati dal body della richiesta
+const { title, content, image  } = req.body;
+// Prepariamo la query per aggiornare la pizza
+connection.query(
+'UPDATE posts SET title = ?, content = ?, image = ? WHERE id = ?',
+[title, content, image, id],
+(err) => {
+if (err) return res.status(500).json({ error: 'Failed to update post' });
+res.json({ message: 'Post updated successfully' });
 }
-    post.titolo=req.body.titolo;
-    post.contenuto=req.body.contenuto;
-    post.immagine=req.body.immagine;
-    post.tags=req.body.tags;
-    console.log(post);
-    res.json(post);
+);
 }
+
+
+
 
 // Funzione per gestire la modifica parziale di un post esistente
 function modify (req, res) {
     res.send('Modify a post');
 }
+
+
 
 
 // Funzione per gestire la cancellazione di un post esistente
@@ -98,6 +104,8 @@ function destroy (req, res) {
             res.sendStatus(204);
         });
     }
+
+
 
 
 module.exports = {
